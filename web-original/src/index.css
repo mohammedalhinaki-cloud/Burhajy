@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", system-ui, sans-serif;
+  --font-quran: "Amiri", serif;
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f6f5f0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* شريط التمرير */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #0f766e55;
+  border-radius: 3px;
+}
+
+/* نمط هندسي إسلامي خفيف للترويسة */
+.pattern-bg {
+  background-color: #053f33;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(212, 180, 102, 0.08) 0, rgba(212, 180, 102, 0.08) 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0, rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+    linear-gradient(135deg, #064e3b 0%, #053f33 60%, #042f27 100%);
+  background-size: 28px 28px, 28px 28px, 100% 100%;
+}
+
+/* مدخل رقم الآية بدون أسهم */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* شريط التقدم */
+input[type="range"].seekbar {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to left,
+    #0d9488 var(--progress, 0%),
+    #d1d5db var(--progress, 0%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].seekbar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #0f766e;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+input[type="range"].seekbar::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #0f766e;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 0.3s ease both;
+}

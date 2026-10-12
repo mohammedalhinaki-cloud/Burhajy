@@ -1,0 +1,9 @@
+.gradle/
+**/build/
+local.properties
+app/src/main/assets/audio/
+app/src/main/assets/timings/
+app/src/main/assets/media-manifest.json
+__pycache__/
+node_modules/
+*.jks

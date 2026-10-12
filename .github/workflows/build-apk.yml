@@ -1,0 +1,41 @@
+name: Build offline APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install audio validation tool
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Download and validate all recordings and verse timings
+        run: python3 scripts/prepare_media.py
+      - name: Build installable signed APK
+        run: gradle :app:assembleDebug --stacktrace
+      - name: Verify complete offline bundle
+        run: |
+          python3 scripts/check_apk.py app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions app/build/outputs/apk/debug/app-debug.apk > permissions.txt
+          if grep -q android.permission.INTERNET permissions.txt; then echo 'Unexpected Internet permission'; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Burhajy-offline-APK
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/src/main/assets/media-manifest.json
+            permissions.txt
+          compression-level: 0
+          if-no-files-found: error
