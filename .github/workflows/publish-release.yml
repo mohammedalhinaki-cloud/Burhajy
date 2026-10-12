@@ -1,0 +1,34 @@
+name: Publish offline APK release
+on:
+  workflow_run:
+    workflows: ["Build offline APK"]
+    types: [completed]
+    branches: [main]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified APK from successful build
+        uses: actions/download-artifact@v4
+        with:
+          name: Burhajy-offline-APK
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: release-files
+      - name: Publish APK on GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          apk="$(find release-files -type f -name app-debug.apk -print -quit)"
+          test -n "$apk"
+          gh release create v1.0.0 "$apk" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$BUILD_SHA" \
+            --title "Burhajy Offline Quran Player v1.0.0" \
+            --notes "Installable offline Android APK. The app includes the complete recitations and verse timings. Tested in airplane mode."
