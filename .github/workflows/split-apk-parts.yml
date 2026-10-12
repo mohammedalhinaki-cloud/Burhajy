@@ -26,7 +26,7 @@ jobs:
           elif [[ -n "${{ inputs.run_id }}" ]]; then
             echo "id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
           else
-            id="$(gh run list --workflow build-apk.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+            id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build-apk.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
             test -n "$id"
             echo "id=$id" >> "$GITHUB_OUTPUT"
           fi
