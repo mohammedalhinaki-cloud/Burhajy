@@ -1,0 +1,46 @@
+name: Split APK for download
+on:
+  workflow_run:
+    workflows: ["Build offline APK"]
+    types: [completed]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  split:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Burhajy-offline-APK
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: incoming
+      - name: Split the unchanged APK into transferable parts
+        shell: bash
+        run: |
+          apk="$(find incoming -name app-debug.apk -type f -print -quit)"
+          test -n "$apk"
+          split -b 400000000 --numeric-suffixes=1 --suffix-length=1 "$apk" Burhajy-APK-part-
+          test "$(find . -maxdepth 1 -name 'Burhajy-APK-part-*' -type f | wc -l)" -ge 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Burhajy-APK-part-1
+          path: Burhajy-APK-part-1
+          compression-level: 0
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Burhajy-APK-part-2
+          path: Burhajy-APK-part-2
+          compression-level: 0
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Burhajy-APK-part-3
+          path: Burhajy-APK-part-3
+          compression-level: 0
+          if-no-files-found: warn
