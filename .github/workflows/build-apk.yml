@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+concurrency:
+  group: offline-apk-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -34,6 +37,24 @@ jobs:
           python3 scripts/check_apk.py app/build/outputs/apk/debug/app-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions app/build/outputs/apk/debug/app-debug.apk > permissions.txt
           if grep -q android.permission.INTERNET permissions.txt; then echo 'Unexpected Internet permission'; exit 1; fi
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test offline seeking, screen-off playback and saved-position restore
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          disk-size: 8G
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -partition-size 8192
+          script: |
+            adb shell svc wifi disable
+            adb shell svc data disable
+            adb shell settings put global airplane_mode_on 1
+            gradle :app:connectedDebugAndroidTest --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: Burhajy-offline-APK
@@ -41,5 +62,6 @@ jobs:
             app/build/outputs/apk/debug/app-debug.apk
             app/src/main/assets/media-manifest.json
             permissions.txt
+            app/build/reports/androidTests/connected/
           compression-level: 0
           if-no-files-found: error
