@@ -1,5 +1,9 @@
 name: Split APK for download
 on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/split-apk-parts.yml]
+  workflow_dispatch:
   workflow_run:
     workflows: ["Build offline APK"]
     types: [completed]
@@ -8,16 +12,30 @@ permissions:
   contents: read
 jobs:
   split:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Select the most recent successful APK build
+        id: run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          elif [[ -n "${{ inputs.run_id }}" ]]; then
+            echo "id=${{ inputs.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            id="$(gh run list --workflow build-apk.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+            test -n "$id"
+            echo "id=$id" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/download-artifact@v4
         with:
           name: Burhajy-offline-APK
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ steps.run.outputs.id }}
           path: incoming
       - name: Split the unchanged APK into transferable parts
         shell: bash
